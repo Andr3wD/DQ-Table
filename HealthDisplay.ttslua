@@ -1,0 +1,87 @@
+function onload()
+   self.createButton({
+      click_function = "increment",
+      function_owner = self,
+      label          = "+",
+      position       = {-0.5,0.3,0.5},
+      width          = 300,
+      height         = 300,
+      font_size = 400,
+      rotation = {0,90,0},
+   })
+   self.createButton({
+      click_function = "decrement",
+      function_owner = self,
+      label          = "-",
+      position       = {-0.5,0.3,-0.5},
+      width          = 300,
+      height         = 300,
+      font_size = 400,
+      rotation = {0,90,0},
+   })
+   self.createInput({
+      input_function = "test",
+      function_owner = self,
+      alignment      = 3,
+      position       = {0.5,0.3,0},
+      rotation = {0,90,0},
+      width          = 1000,
+      height         = 500,
+      font_size = 230,
+      font_color     = {0,0,0},
+      })
+   maximum = 0
+   count = 0
+   getnamedata(self.getDescription())
+   updatedisplay()
+end
+
+function test(obj,col,input,selected)
+   if selected == false then
+      getnamedata(input)
+      self.setDescription(count .. " / " .. maximum)
+      updatedisplay()
+   end
+end
+
+function getnamedata(str)
+   if str ~= nil and string.find(str,"/") ~= nil then
+      for i=1,string.len(str) do
+         if string.sub(str,i,i) == "/" then
+            maximum = tonumber(string.sub(str,i+1, string.len(str)))
+            count = tonumber(string.sub(str,0,i-1))
+            return
+         end
+      end
+   end
+end
+
+function updatedisplay()
+   local col
+   if count > maximum then
+      col = "Green"
+   elseif count <= 0 then
+      col = "Red"
+   else
+      col = "Black"
+   end
+   self.editInput({
+      index          = 0,
+      value          = count .. "/\n" .. maximum,
+      font_color = stringColorToRGB(col)
+   })
+end
+
+function increment(obj,col)
+   getnamedata(self.getDescription())
+   count = count + 1
+   self.setDescription(count .. " / " .. maximum)
+   updatedisplay()
+end
+
+function decrement(obj,col)
+   getnamedata(self.getDescription())
+   count = count - 1
+   self.setDescription(count .. " / " .. maximum)
+   updatedisplay()
+end

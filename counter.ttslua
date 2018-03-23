@@ -1,0 +1,72 @@
+function onload()
+   self.createButton({
+      click_function = "increment",
+      function_owner = self,
+      label          = "+",
+      position       = {-0.5,0.3,0.5},
+      width          = 300,
+      height         = 300,
+      font_size = 400,
+      rotation = {0,90,0},
+   })
+   self.createButton({
+      click_function = "decrement",
+      function_owner = self,
+      label          = "-",
+      position       = {-0.5,0.3,-0.5},
+      width          = 300,
+      height         = 300,
+      font_size = 400,
+      rotation = {0,90,0},
+   })
+   self.createInput({
+      input_function = "test",
+      function_owner = self,
+      alignment      = 3,
+      position       = {0.5,0.3,0},
+      rotation = {0,90,0},
+      width          = 1000,
+      height         = 500,
+      font_size = 400,
+      font_color     = {0,0,0},
+      })
+   count = 0
+   getnamedata()
+   updatedisplay()
+end
+
+function test(obj,col,input,selected)
+   if selected == false then
+      getnamedata()
+      self.setDescription(input)
+      updatedisplay()
+   end
+end
+
+function getnamedata()
+   local desc = self.getDescription()
+   if desc ~= nil and desc ~= "" then
+      count = tonumber(self.getDescription())
+   end
+end
+
+function updatedisplay()
+   self.editInput({
+      index          = 0,
+      value          = count,
+   })
+end
+
+function increment(obj,col)
+   getnamedata()
+   count = count + 1
+   self.setDescription(count)
+   updatedisplay()
+end
+
+function decrement(obj,col)
+   getnamedata()
+   count = count - 1
+   self.setDescription(count)
+   updatedisplay()
+end

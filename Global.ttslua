@@ -1,0 +1,171 @@
+function onload(info)
+   --just incase, gridsize x: 2.183 y: 1.847   no offsets
+   BaceTable = { --thanks claytja for this table
+      {color="Black"},
+      {color="White",hex="7F7F7F",zone="432ed9",textt="48ca61"},
+      {color="Red",hex="DA1917",zone="0e94e6",textt="84323d"},
+      {color="Yellow",hex="E6E42B",zone="",textt=""},
+      {color="Green",hex="30B22A",zone="4397ca",textt="b329cb"},
+      {color="Blue",hex="1E87FF",zone="d485b9",textt="f590cf"},
+      {color="Pink",hex="F46FCD",zone="4d4205",textt="1a2f58"},
+      {color="Orange",hex="F3631C",zone="78b4bc",textt="08afcd"},
+      {color="Teal",hex="20B09A",zone="",textt=""},
+      {color="Brown",hex="703A16",zone="",textt=""},
+   }
+   if info ~= "" and info ~= nil then
+      local info1 = JSON.decode(info)
+      currentplayers = info1[1]
+   else
+      currentplayers = {}
+   end
+   mainsavebag = getObjectFromGUID("d15476")
+end
+
+function onScriptingButtonDown(ind,col)
+   if ind == 1 then
+      currentplayers = {}
+   elseif ind == 2 then
+      log(currentplayers)
+   end
+end
+
+function onSave()
+   return JSON.encode({currentplayers})
+end
+
+function onPlayerChangedColor(col)
+   if col == "Grey" then
+      for i,v in pairs(currentplayers) do
+         if Player[v.col].seated == false then
+            packup(v)
+            table.remove(currentplayers,i)
+            return
+         end
+      end
+   elseif col ~= "Grey" and col ~= "Black" then
+      if Player[col].steam_id == "76561198041312957" and Player[col].admin == false then
+         Player[col].promote()
+         printToAll("Player " .. Player[col].steam_name .. " has been promoted because he/she is a dev.",{1,1,1})
+      end
+      table.insert(currentplayers,{col=col,id=Player[col].steam_id,name=Player[col].steam_name})
+      for i,v in pairs(mainsavebag.getObjects()) do
+         if v.name == Player[col].steam_id then
+            local newobj = mainsavebag.takeObject({
+               position       = {0,10,0},
+               smooth         = false,
+               index          = i-1,
+            })
+            unpacksave(newobj,col)
+            return
+         end
+      end
+      printToAll("Cannot find save for " .. Player[col].steam_name,stringColorToRGB("Yellow"))
+   end
+end
+
+function unpacksave(plrsavebag,col)
+   function unpackinsidef()
+   local plrdata
+   for i,v in pairs(BaceTable) do --find static zone guid
+      if v.color == col then
+         plrdata = v
+         break
+      end
+   end
+   waitFrames(5)
+   plrsavebag.setLock(true)
+   local bagdata = JSON.decode(plrsavebag.getVar("data")) --has local obj positions stored
+   local plrzone = getObjectFromGUID(plrdata.zone) --used to get global position from local
+   local rot = plrzone.getRotation() --used to get global rot from local
+   for i,v in pairs(bagdata) do
+      plrsavebag.takeObject({
+         position       = plrzone.positionToWorld(v.lpos),
+         rotation       = {v.lrot[1]+rot.x,v.lrot[2]+rot.y,v.lrot[3]+rot.z},
+         smooth         = false,
+         guid=v.guid,
+      })
+   end
+   if bagdata[1] ~= nil then --could save an empty bag or add things to the bag manually.
+      plrsavebag.destruct()
+   else
+      plrsavebag.setPosition(plrzone.getPosition())
+      plrsavebag.setLock(false)
+      printToAll("Could not find save objects positions", stringColorToRGB("Red"))
+   end
+   if plrsavebag.getQuantity() > 0 then --if not all objs are taken out of the bag
+      plrsavebag.setPosition(plrzone.getPosition())
+      plrsavebag.setLock(false)
+      printToAll("Could not find ALL save objects positions", stringColorToRGB("Red"))
+   end
+   return 1
+   end
+   startLuaCoroutine(self, "unpackinsidef")
+end
+
+function packup(data)
+   --save data relative to scripting zone
+   function packupinsidef()
+   local plrdata
+   for i,v in pairs(BaceTable) do
+      if v.color == data.col then
+         print(v)
+         plrdata = v
+         break
+      end
+   end
+   waitFrames(5)
+   local plrzone = getObjectFromGUID(plrdata.zone)
+   local pos = plrzone.getPosition()
+   local rot = plrzone.getRotation()
+   local objsavedata = {}
+   local newobj = spawnObject({
+      type           = "Bag",
+      position       = {0,10,0},
+   })
+   newobj.setLock(true)
+   for i,v in pairs(plrzone.getObjects()) do
+      if v.interactable == true then
+         local lpos = plrzone.positionToLocal(v.getPosition())
+         local vrot = v.getRotation()
+         local lrot = {vrot.x-rot.x,vrot.y-rot.y,vrot.z-rot.z}
+         table.insert(objsavedata,{lpos={table.unpack(lpos)},lrot={table.unpack(lrot)},guid=v.getGUID()})
+         newobj.putObject(v)
+      end
+   end
+   newobj.setLuaScript("data = '" .. JSON.encode(objsavedata) .. "'")
+   --table.insert(playersavedata,{bagguid=newobj.getGUID(),id=data.id})
+   newobj.setLock(false)
+   newobj.setDescription(data.name)
+   newobj.setName(data.id)
+   getObjectFromGUID(plrdata.textt).TextTool.setValue(" ")
+   mainsavebag.putObject(newobj)
+   return 1
+   end
+   startLuaCoroutine(self, "packupinsidef")
+end
+
+function savebutton(obj,col)
+   packup({col=col,id=Player[col].steam_id,name=Player[col].steam_name})
+end
+
+function loadbutton(obj,col)
+   for i,v in pairs(mainsavebag.getObjects()) do
+      if v.nickname == Player[col].steam_id then
+         local newobj = mainsavebag.takeObject({
+            position       = {0,10,0},
+            smooth         = false,
+            index          = i,
+         })
+         unpacksave(newobj,col)
+         return
+      end
+   end
+   printToAll("Cannot find save for " .. Player[col].steam_name,stringColorToRGB("Yellow"))
+end
+
+function waitFrames(frames)
+  while frames > 0 do
+  coroutine.yield(0)
+  frames = frames - 1
+  end
+end

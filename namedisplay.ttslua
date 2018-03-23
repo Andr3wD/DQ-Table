@@ -1,0 +1,70 @@
+function onload()
+   holdplayername = true
+   self.createButton({
+      click_function = "selectname",
+      function_owner = self,
+      label          = self.getDescription(),
+      position       = {0,0.1,0},
+      rotation = {0,90,0},
+      width          = 1200,
+      height         = 500,
+      font_size      = 200,
+      tooltip        = "Click me to change name",
+   })
+   local desc = self.getDescription()
+   if desc ~= nil and desc ~= "" then
+      printToAll(desc .. " has joined the adventure.", {1,1,1})
+      for i,v in pairs(getSeatedPlayers()) do
+         if Player[v].steam_id == self.getName() then
+            for ind,var in pairs(Global.getTable("BaceTable")) do
+               if var.color == v then
+                  getObjectFromGUID(var.textt).TextTool.setValue(self.getDescription())
+                  getObjectFromGUID(var.textt).TextTool.setFontSize(200)
+                  return
+               end
+            end
+         end
+      end
+   end
+end
+
+function selectname(obj,col)
+   self.clearButtons()
+   self.createInput({
+      input_function = "updatename",
+      function_owner = self,
+      label          = "Character Name",
+      alignment      = 3,
+      position       = {0,0.1,0},
+      rotation       = {0,90,0},
+      width          = 700,
+      height         = 300,
+      font_size      = 300,
+   })
+end
+
+function updatename(obj,col,input,selected)
+   if selected == false then
+      self.clearInputs()
+      self.setName(Player[col].steam_id)
+      self.setDescription(input)
+      self.createButton({
+         click_function = "selectname",
+         function_owner = self,
+         label          = self.getDescription(),
+         position       = {0,0.1,0},
+         rotation = {0,90,0},
+         width          = 1200,
+         height         = 500,
+         font_size      = 200,
+         tooltip        = "Click me to change name",
+      })
+      for i,v in pairs(Global.getTable("BaceTable")) do
+         if v.color == col then
+            getObjectFromGUID(v.textt).TextTool.setValue(self.getDescription())
+            getObjectFromGUID(v.textt).TextTool.setFontSize(200)
+            return
+         end
+      end
+   end
+end
